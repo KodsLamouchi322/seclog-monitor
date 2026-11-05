@@ -1,0 +1,34 @@
+# Secrets : ne jamais committer
+.env
+*.pem
+*.key
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Données et uploads
+uploads/
+data/*
+!data/samples/
+!data/samples/.gitkeep
+*.log
+
+# Volumes Docker locaux
+esdata/
+mongodata/
+redisdata/
+grafana-data/
+
+# IDE et système
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
