@@ -114,19 +114,24 @@ services:
   web:
     build:
       context: ./web
+      args:
+        INSTALL_DEV: "1"
     container_name: seclog-web
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "--reload", "--access-logfile", "-", "wsgi:app"]
     environment:
-      SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY manquant, voir .env.example}
       ES_HOST: http://elasticsearch:9200
       KIBANA_URL: http://kibana:5601
       LOGSTASH_URL: http://logstash:9600
       MONGO_URI: mongodb://${MONGO_USER:-seclog}:${MONGO_PASSWORD}@mongo:27017/${MONGO_DB:-seclog}?authSource=admin
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     ports:
       - "${WEB_PORT:-8000}:8000"
     volumes:
       - ./web/app:/app/app                 # rechargement à chaud en développement
+      - ./web/tests:/app/tests:ro          # tests pytest
       - uploads:/app/uploads               # dossier surveillé par Logstash
       - ./scripts:/scripts:ro              # scripts de données de test
       - ./elasticsearch:/elasticsearch:ro  # index template

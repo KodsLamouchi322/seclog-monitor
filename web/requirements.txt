@@ -4,5 +4,3 @@ pymongo==4.8.0
 redis==5.0.8
 elasticsearch==8.15.1
 requests==2.32.3
-# Données de test (sprint 2). À déplacer dans un fichier de dev au sprint 5.
-Faker==28.4.1

@@ -8,52 +8,31 @@
       "refresh_interval": "5s"
     },
     "mappings": {
-      "dynamic": "false",
+      "dynamic_templates": [
+        { "strings_as_keyword": {
+            "match_mapping_type": "string",
+            "mapping": { "type": "keyword", "ignore_above": 512 } } }
+      ],
       "properties": {
-        "@timestamp": { "type": "date" },
+        "@timestamp":  { "type": "date" },
         "ingested_at": { "type": "date" },
-        "event": {
-          "properties": {
-            "type":     { "type": "keyword" },
-            "category": { "type": "keyword" },
-            "action":   { "type": "keyword" }
-          }
-        },
-        "result":   { "type": "keyword" },
-        "severity": { "type": "keyword" },
+        "message": { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 512 } } },
+        "result":         { "type": "keyword" },
+        "severity":       { "type": "keyword" },
         "severity_score": { "type": "byte" },
-        "source": {
-          "properties": {
-            "ip":   { "type": "ip" },
-            "port": { "type": "integer" },
-            "geo": {
-              "properties": {
-                "country_name":     { "type": "keyword" },
-                "country_iso_code": { "type": "keyword" },
-                "city_name":        { "type": "keyword" },
-                "location":         { "type": "geo_point" }
-              }
-            }
-          }
-        },
-        "user": {
-          "properties": {
-            "name": { "type": "keyword", "fields": { "text": { "type": "text" } } },
-            "role": { "type": "keyword" }
-          }
-        },
-        "host": { "properties": { "name": { "type": "keyword" } } },
-        "http": {
-          "properties": {
-            "method": { "type": "keyword" },
-            "uri": { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 512 } } },
-            "status_code": { "type": "short" }
-          }
-        },
-        "message": { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } },
-        "log_type": { "type": "keyword" },
-        "file_id":  { "type": "keyword" },
-        "tags":     { "type": "keyword" }
+        "event": { "properties": {
+          "type": { "type": "keyword" }, "category": { "type": "keyword" }, "action": { "type": "keyword" } } },
+        "user": { "properties": { "name": { "type": "keyword" }, "role": { "type": "keyword" } } },
+        "source": { "properties": {
+          "ip":   { "type": "ip" },
+          "port": { "type": "integer" },
+          "geo": { "properties": {
+            "location":         { "type": "geo_point" },
+            "country_iso_code": { "type": "keyword" },
+            "country_name":     { "type": "keyword" },
+            "city_name":        { "type": "keyword" } } } } },
+        "upload": { "properties": { "file_name": { "type": "keyword" } } },
+        "tags": { "type": "keyword" }
       }
     }
   }
