@@ -17,6 +17,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from .cache import get_redis
 from .db import get_db
+from .sessions import create_session, set_session_cookie
 from .ratelimit import client_ip
 
 bp = Blueprint("auth", __name__)
@@ -79,7 +80,12 @@ def login():
             get_redis().delete(fail_key)
         except RedisError:
             pass
-        return jsonify(status="ok", username=username), 200
+        sid = create_session(username, user.get("role", "user"))
+        if sid is None:
+            return jsonify(error="unavailable", message="Service de sessions indisponible"), 503
+        resp = jsonify(status="ok", username=username)
+        set_session_cookie(resp, sid)
+        return resp, 200
 
     cfg = current_app.config
     max_fails = cfg["LOGIN_MAX_FAILS"]

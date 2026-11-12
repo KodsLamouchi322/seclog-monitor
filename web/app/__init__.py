@@ -40,6 +40,9 @@ def create_app() -> Flask:
     from .auth import bp as auth_bp, init_blacklist
     app.register_blueprint(auth_bp)
     init_blacklist(app)
+    from .sessions import bp as sessions_bp, init_sessions
+    app.register_blueprint(sessions_bp)
+    init_sessions(app)
 
     @app.get("/")
     def index():

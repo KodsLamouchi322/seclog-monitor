@@ -117,7 +117,7 @@ services:
     container_name: seclog-web
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "--reload", "--access-logfile", "-", "wsgi:app"]
     environment:
-      SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY manquant, voir .env.example}
       ES_HOST: http://elasticsearch:9200
       KIBANA_URL: http://kibana:5601
       LOGSTASH_URL: http://logstash:9600
