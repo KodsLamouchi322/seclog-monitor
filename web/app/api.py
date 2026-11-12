@@ -4,6 +4,7 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from elasticsearch import ApiError, TransportError
 from flask import Blueprint, jsonify, request
+from pymongo.errors import PyMongoError
 
 from .db import get_db
 from .es import INDEX, get_es
@@ -22,6 +23,7 @@ def list_logs():
         return jsonify(error=str(exc)), 400
     except (ApiError, TransportError):
         return jsonify(error="Elasticsearch indisponible."), 503
+    _save_search(request.args.to_dict(), data)
     return jsonify(data)
 
 
@@ -102,3 +104,32 @@ def get_file(file_id):
     except (ApiError, TransportError):
         pass  # ES indisponible : on renvoie le statut tel que stocké
     return jsonify(_serialize(doc))
+
+
+HISTORY = "search_history"
+NOT_CRITERIA = {"page", "size", "sort", "order"}
+
+
+def _save_search(args: dict, data: dict) -> None:
+    criteria = {k: v for k, v in args.items() if v and k not in NOT_CRITERIA}
+    if not criteria:
+        return
+    try:
+        get_db()[HISTORY].insert_one({
+            "criteria": criteria,
+            "total": data["total"],
+            "took_ms": data["took_ms"],
+            "at": datetime.now(timezone.utc),
+        })
+    except PyMongoError:
+        pass  # l'historique ne doit jamais bloquer une recherche
+
+
+@bp.get("/searches")
+def list_searches():
+    try:
+        size = min(50, max(1, int(request.args.get("size", 10))))
+    except ValueError:
+        return jsonify(error="size doit être un entier."), 400
+    docs = get_db()[HISTORY].find().sort("_id", -1).limit(size)
+    return jsonify(results=[_serialize(d) for d in docs])
