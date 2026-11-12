@@ -8,7 +8,7 @@ from pymongo.errors import PyMongoError
 
 from .db import get_db
 from .es import INDEX, get_es
-from .search import run_search
+from .search import build_query, run_search
 
 COLLECTION = "files"
 
@@ -133,3 +133,33 @@ def list_searches():
         return jsonify(error="size doit être un entier."), 400
     docs = get_db()[HISTORY].find().sort("_id", -1).limit(size)
     return jsonify(results=[_serialize(d) for d in docs])
+
+
+def _buckets(res: dict, name: str) -> list:
+    return [{"key": b["key_as_string"] if "key_as_string" in b else b["key"],
+             "count": b["doc_count"]}
+            for b in res["aggregations"][name]["buckets"]]
+
+
+@bp.get("/stats")
+def stats():
+    aggs = {
+        "by_severity": {"terms": {"field": "severity", "size": 10}},
+        "by_event_type": {"terms": {"field": "event.type", "size": 20}},
+        "by_result": {"terms": {"field": "result", "size": 10}},
+        "top_countries": {"terms": {"field": "source.geo.country_iso_code", "size": 10}},
+        "top_ips": {"terms": {"field": "source.ip", "size": 10}},
+        "per_day": {"date_histogram": {"field": "@timestamp",
+                                       "calendar_interval": "day",
+                                       "format": "yyyy-MM-dd"}},
+    }
+    try:
+        res = get_es().search(index=INDEX, size=0, track_total_hits=True,
+                              query=build_query(request.args.to_dict()),
+                              aggs=aggs)
+    except (ApiError, TransportError):
+        return jsonify(error="Elasticsearch indisponible."), 503
+    out = {"total": res["hits"]["total"]["value"], "took_ms": res["took"]}
+    for name in aggs:
+        out[name] = _buckets(res, name)
+    return jsonify(out)
