@@ -29,6 +29,12 @@ def create_app() -> Flask:
 
     app.register_blueprint(upload_bp)
 
+    from .api import bp as api_bp
+
+    app.register_blueprint(api_bp)
+    from .ratelimit import init_rate_limit
+    init_rate_limit(app)
+
     @app.get("/")
     def index():
         return (
