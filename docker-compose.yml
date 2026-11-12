@@ -131,6 +131,7 @@ services:
       - "${WEB_PORT:-8000}:8000"
     volumes:
       - ./web/app:/app/app                 # rechargement à chaud en développement
+      - ./web/tests:/app/tests:ro          # tests pytest
       - uploads:/app/uploads               # dossier surveillé par Logstash
       - ./scripts:/scripts:ro              # scripts de données de test
       - ./elasticsearch:/elasticsearch:ro  # index template
