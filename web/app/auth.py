@@ -7,6 +7,7 @@
 """
 import hmac
 import ipaddress
+import logging
 import os
 
 from flask import Blueprint, current_app, jsonify, request
@@ -19,6 +20,7 @@ from .db import get_db
 from .ratelimit import client_ip
 
 bp = Blueprint("auth", __name__)
+log = logging.getLogger("seclog.auth")
 
 FAIL_PREFIX = "seclog:login:fail:"
 BL_PREFIX = "seclog:blacklist:"
@@ -90,10 +92,11 @@ def login():
         count, ttl = pipe.execute()
         if ttl < 0:
             r.expire(fail_key, cfg["LOGIN_FAIL_WINDOW"])
+        log.warning("Échec de connexion depuis %s (%s/%s)", ip, count, max_fails)
         if count >= max_fails:
             r.setex(BL_PREFIX + ip, cfg["BLACKLIST_TTL"], "1")
             r.delete(fail_key)
-            current_app.logger.warning("IP %s mise en liste noire après %s échecs", ip, count)
+            log.error("IP %s mise en liste noire après %s échecs (TTL %s s)", ip, count, cfg["BLACKLIST_TTL"])
             resp = jsonify(error="ip_blacklisted", message="Trop d'échecs : IP bloquée.")
             resp.status_code = 403
             resp.headers["Retry-After"] = str(cfg["BLACKLIST_TTL"])

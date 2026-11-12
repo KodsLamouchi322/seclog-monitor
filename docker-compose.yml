@@ -124,6 +124,7 @@ services:
       MONGO_URI: mongodb://${MONGO_USER:-seclog}:${MONGO_PASSWORD}@mongo:27017/${MONGO_DB:-seclog}?authSource=admin
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     ports:
       - "${WEB_PORT:-8000}:8000"
     volumes:

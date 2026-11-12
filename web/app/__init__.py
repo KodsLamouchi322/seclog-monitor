@@ -2,8 +2,11 @@ import os
 
 from flask import Flask
 
+from .logging_conf import setup_logging
+
 
 def create_app() -> Flask:
+    setup_logging()
     app = Flask(__name__)
     max_mb = int(os.getenv("MAX_UPLOAD_MB", "50"))
     app.config.update(

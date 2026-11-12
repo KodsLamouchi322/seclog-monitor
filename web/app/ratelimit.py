@@ -5,6 +5,7 @@
 - /health et /static ne sont jamais limités.
 - Redis en panne : les requêtes passent (même comportement que le cache).
 """
+import logging
 import os
 import time
 
@@ -12,6 +13,8 @@ from flask import g, jsonify, request
 from redis.exceptions import RedisError
 
 from .cache import get_redis
+
+log = logging.getLogger("seclog.ratelimit")
 
 EXEMPT_PATHS = {"/health"}
 EXEMPT_PREFIXES = ("/static/",)
@@ -58,6 +61,8 @@ def init_rate_limit(app):
             "reset": int(time.time()) + ttl,
         }
         if count > limit:
+            if count == limit + 1:
+                log.warning("Limite de débit dépassée par %s sur %s (%s req/%s s)", ip, request.path, limit, window)
             resp = jsonify(
                 error="rate_limited",
                 message=f"Trop de requêtes. Réessayez dans {ttl} s.",
