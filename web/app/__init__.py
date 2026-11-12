@@ -34,6 +34,9 @@ def create_app() -> Flask:
     app.register_blueprint(api_bp)
     from .ratelimit import init_rate_limit
     init_rate_limit(app)
+    from .auth import bp as auth_bp, init_blacklist
+    app.register_blueprint(auth_bp)
+    init_blacklist(app)
 
     @app.get("/")
     def index():
