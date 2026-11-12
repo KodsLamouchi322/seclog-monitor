@@ -6,6 +6,7 @@ from elasticsearch import ApiError, TransportError
 from flask import Blueprint, jsonify, request
 from pymongo.errors import PyMongoError
 
+from .cache import cached_json
 from .db import get_db
 from .es import INDEX, get_es
 from .search import build_query, run_search
@@ -17,14 +18,17 @@ bp = Blueprint("api", __name__, url_prefix="/api/v1")
 
 @bp.get("/logs")
 def list_logs():
-    try:
-        data = run_search(get_es(), request.args.to_dict())
-    except ValueError as exc:
-        return jsonify(error=str(exc)), 400
-    except (ApiError, TransportError):
-        return jsonify(error="Elasticsearch indisponible."), 503
-    _save_search(request.args.to_dict(), data)
-    return jsonify(data)
+    def compute():
+        try:
+            data = run_search(get_es(), request.args.to_dict())
+        except ValueError as exc:
+            return jsonify(error=str(exc)), 400
+        except (ApiError, TransportError):
+            return jsonify(error="Elasticsearch indisponible."), 503
+        _save_search(request.args.to_dict(), data)
+        return data
+
+    return cached_json(compute)
 
 
 @bp.get("/logs/<doc_id>")
@@ -153,13 +157,16 @@ def stats():
                                        "calendar_interval": "day",
                                        "format": "yyyy-MM-dd"}},
     }
-    try:
-        res = get_es().search(index=INDEX, size=0, track_total_hits=True,
-                              query=build_query(request.args.to_dict()),
-                              aggs=aggs)
-    except (ApiError, TransportError):
-        return jsonify(error="Elasticsearch indisponible."), 503
-    out = {"total": res["hits"]["total"]["value"], "took_ms": res["took"]}
-    for name in aggs:
-        out[name] = _buckets(res, name)
-    return jsonify(out)
+    def compute():
+        try:
+            res = get_es().search(index=INDEX, size=0, track_total_hits=True,
+                                  query=build_query(request.args.to_dict()),
+                                  aggs=aggs)
+        except (ApiError, TransportError):
+            return jsonify(error="Elasticsearch indisponible."), 503
+        out = {"total": res["hits"]["total"]["value"], "took_ms": res["took"]}
+        for name in aggs:
+            out[name] = _buckets(res, name)
+        return out
+
+    return cached_json(compute)
