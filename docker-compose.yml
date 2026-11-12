@@ -1,0 +1,158 @@
+# SecLog Monitor - environnement Docker (Sprint 2, phase 4)
+# Démarrage : cp .env.example .env && docker compose up -d --build
+name: seclog
+
+services:
+  # ------------------------------------------------------------ Elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION:-8.15.3}
+    container_name: seclog-elasticsearch
+    environment:
+      - discovery.type=single-node
+      # Sécurité Elastic désactivée en développement (à activer avant la mise en production)
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms${ES_HEAP:-512m} -Xmx${ES_HEAP:-512m}
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    # Port 9200 interne au réseau. Pour déboguer depuis l'hôte, décommenter :
+    # ports:
+    #   - "127.0.0.1:9200:9200"
+    networks: [seclog-net]
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -s http://localhost:9200/_cluster/health | grep -Eq '"status":"(green|yellow)"'
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------- Kibana
+  kibana:
+    image: docker.elastic.co/kibana/kibana:${STACK_VERSION:-8.15.3}
+    container_name: seclog-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - SERVER_NAME=kibana
+    ports:
+      - "${KIBANA_PORT:-5601}:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks: [seclog-net]
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -s http://localhost:5601/api/status | grep -q '"level":"available"'
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 60s
+    restart: unless-stopped
+
+  # ----------------------------------------------------------------- Logstash
+  logstash:
+    image: docker.elastic.co/logstash/logstash:${STACK_VERSION:-8.15.3}
+    container_name: seclog-logstash
+    environment:
+      - LS_JAVA_OPTS=-Xms256m -Xmx256m
+      - XPACK_MONITORING_ENABLED=false
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - uploads:/usr/share/logstash/watched:ro   # dossier surveillé (partagé avec web)
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks: [seclog-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9600/ > /dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------ MongoDB
+  mongo:
+    image: mongo:7.0
+    container_name: seclog-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-seclog}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?définir MONGO_PASSWORD dans .env}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-seclog}
+    volumes:
+      - mongodata:/data/db
+      - ./mongo/init:/docker-entrypoint-initdb.d:ro
+    networks: [seclog-net]
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand({ping:1}).ok' | grep -q 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
+  # -------------------------------------------------------------------- Redis
+  redis:
+    image: redis:7.2-alpine
+    container_name: seclog-redis
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?définir REDIS_PASSWORD dans .env}", "--appendonly", "yes"]
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD}
+    volumes:
+      - redisdata:/data
+    networks: [seclog-net]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # ---------------------------------------------------- Application web (Flask)
+  web:
+    build:
+      context: ./web
+    container_name: seclog-web
+    command: ["gunicorn", "--bind", "0.0.0.0:8000", "--reload", "--access-logfile", "-", "wsgi:app"]
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
+      ES_HOST: http://elasticsearch:9200
+      KIBANA_URL: http://kibana:5601
+      LOGSTASH_URL: http://logstash:9600
+      MONGO_URI: mongodb://${MONGO_USER:-seclog}:${MONGO_PASSWORD}@mongo:27017/${MONGO_DB:-seclog}?authSource=admin
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+    volumes:
+      - ./web/app:/app/app                 # rechargement à chaud en développement
+      - uploads:/app/uploads               # dossier surveillé par Logstash
+      - ./scripts:/scripts:ro              # scripts de données de test
+      - ./elasticsearch:/elasticsearch:ro  # index template
+      - ./data:/data                       # jeux de données générés
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [seclog-net]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+networks:
+  seclog-net:
+    name: seclog-net
+
+volumes:
+  esdata:
+  mongodata:
+  redisdata:
+  uploads:

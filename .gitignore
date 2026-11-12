@@ -32,3 +32,6 @@ grafana-data/
 .idea/
 .DS_Store
 Thumbs.db
+data/samples/security_logs.*
+data/samples/security_logs.*
+.env.old

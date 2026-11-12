@@ -1,0 +1,60 @@
+{
+  "index_patterns": ["logs-security-*"],
+  "priority": 200,
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "refresh_interval": "5s"
+    },
+    "mappings": {
+      "dynamic": "false",
+      "properties": {
+        "@timestamp": { "type": "date" },
+        "ingested_at": { "type": "date" },
+        "event": {
+          "properties": {
+            "type":     { "type": "keyword" },
+            "category": { "type": "keyword" },
+            "action":   { "type": "keyword" }
+          }
+        },
+        "result":   { "type": "keyword" },
+        "severity": { "type": "keyword" },
+        "severity_score": { "type": "byte" },
+        "source": {
+          "properties": {
+            "ip":   { "type": "ip" },
+            "port": { "type": "integer" },
+            "geo": {
+              "properties": {
+                "country_name":     { "type": "keyword" },
+                "country_iso_code": { "type": "keyword" },
+                "city_name":        { "type": "keyword" },
+                "location":         { "type": "geo_point" }
+              }
+            }
+          }
+        },
+        "user": {
+          "properties": {
+            "name": { "type": "keyword", "fields": { "text": { "type": "text" } } },
+            "role": { "type": "keyword" }
+          }
+        },
+        "host": { "properties": { "name": { "type": "keyword" } } },
+        "http": {
+          "properties": {
+            "method": { "type": "keyword" },
+            "uri": { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 512 } } },
+            "status_code": { "type": "short" }
+          }
+        },
+        "message": { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } },
+        "log_type": { "type": "keyword" },
+        "file_id":  { "type": "keyword" },
+        "tags":     { "type": "keyword" }
+      }
+    }
+  }
+}
