@@ -114,6 +114,8 @@ services:
   web:
     build:
       context: ./web
+      args:
+        INSTALL_DEV: "1"
     container_name: seclog-web
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "--reload", "--access-logfile", "-", "wsgi:app"]
     environment:

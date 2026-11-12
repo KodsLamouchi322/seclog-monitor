@@ -10,8 +10,11 @@ WORKDIR /app
 RUN groupadd --system --gid 10001 app \
  && useradd --system --uid 10001 --gid app --create-home app
 
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+# INSTALL_DEV=1 ajoute requirements-dev.txt (tests, Faker). Défaut : image de production.
+ARG INSTALL_DEV=0
+COPY requirements.txt requirements-dev.txt ./
+RUN pip install -r requirements.txt \
+ && if [ "$INSTALL_DEV" = "1" ]; then pip install -r requirements-dev.txt; fi
 
 COPY wsgi.py .
 COPY app ./app
