@@ -82,7 +82,7 @@ def validate_json(text: str, preview_lines: int = 10) -> dict:
 
 
 def validate_txt(text: str, preview_lines: int = 10) -> dict:
-    lines = [l for l in text.splitlines() if l.strip()]
+    lines = [ln for ln in text.splitlines() if ln.strip()]
     if not lines:
         raise ValidationError("Fichier vide.")
     return {"total_lines": len(lines), "invalid_lines": 0, "preview": lines[:preview_lines]}

@@ -157,6 +157,7 @@ def stats():
                                        "calendar_interval": "day",
                                        "format": "yyyy-MM-dd"}},
     }
+
     def compute():
         try:
             res = get_es().search(index=INDEX, size=0, track_total_hits=True,
