@@ -1,23 +1,80 @@
 {% extends "base.html" %}
 {% set active_page = 'home' %}
-{% block title %}Accueil{% endblock %}
+{% block title %}Tableau de bord{% endblock %}
 {% block content %}
-<h1 class="h3 mb-3">SecLog Monitor</h1>
-<p class="text-muted">Collecte, recherche et analyse de logs de sécurité (ELK).</p>
-<div class="row g-3">
-  <div class="col-md-6">
-    <div class="card h-100"><div class="card-body">
-      <h2 class="h5">Importer des logs</h2>
-      <p class="text-muted">Envoyer un fichier CSV, JSON ou TXT et prévisualiser les premières lignes.</p>
-      <a class="btn btn-primary" href="/upload">Aller à l'import</a>
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+  <h1 class="h3 mb-0">Tableau de bord</h1>
+  <div class="d-flex align-items-center gap-2">
+    <label for="period" class="form-label mb-0 small text-muted">Période</label>
+    <select id="period" class="form-select form-select-sm w-auto">
+      <option value="24h">Dernières 24 h</option>
+      <option value="7j" selected>7 derniers jours</option>
+      <option value="30j">30 derniers jours</option>
+    </select>
+  </div>
+</div>
+
+<div id="dash-error" class="alert alert-danger d-none" role="alert"></div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card kpi h-100"><div class="card-body">
+      <div class="text-muted small">Événements</div>
+      <div id="kpi-events" class="kpi-value">-</div>
     </div></div>
   </div>
-  <div class="col-md-6">
-    <div class="card h-100"><div class="card-body">
-      <h2 class="h5">État des services</h2>
-      <p class="text-muted">Vérifier Elasticsearch, MongoDB, Redis et Logstash.</p>
-      <a class="btn btn-outline-secondary" href="/health">Voir /health</a>
+  <div class="col-6 col-lg-3">
+    <div class="card kpi h-100"><div class="card-body">
+      <div class="text-muted small">Échecs de connexion</div>
+      <div id="kpi-failures" class="kpi-value text-warning">-</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card kpi h-100"><div class="card-body">
+      <div class="text-muted small">Événements critiques</div>
+      <div id="kpi-critical" class="kpi-value text-danger">-</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card kpi h-100"><div class="card-body">
+      <div class="text-muted small">Fichiers importés</div>
+      <div id="kpi-files" class="kpi-value">-</div>
     </div></div>
   </div>
 </div>
+
+<div id="dash-empty" class="alert alert-info d-none">
+  Aucun événement sur cette période. Importe un fichier de logs ou élargis la période.
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card h-100"><div class="card-body">
+      <h2 class="h6">Événements par jour</h2>
+      <div class="chart-box"><canvas id="chart-per-day"></canvas></div>
+    </div></div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card h-100"><div class="card-body">
+      <h2 class="h6">Répartition par gravité</h2>
+      <div class="chart-box"><canvas id="chart-severity"></canvas></div>
+    </div></div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100"><div class="card-body">
+      <h2 class="h6">Top 10 des adresses IP</h2>
+      <div class="chart-box"><canvas id="chart-top-ips"></canvas></div>
+    </div></div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100"><div class="card-body">
+      <h2 class="h6">Événements par type</h2>
+      <div class="chart-box"><canvas id="chart-event-type"></canvas></div>
+    </div></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

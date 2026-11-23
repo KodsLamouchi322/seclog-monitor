@@ -44,11 +44,12 @@ def create_app() -> Flask:
     app.register_blueprint(sessions_bp)
     init_sessions(app)
 
-    from .sessions import load_session
+    from .access import get_session, init_access
+    init_access(app)
 
     @app.context_processor
     def inject_user():
-        return {"current_user": load_session()}
+        return {"current_user": get_session()}
 
     @app.get("/")
     def index():

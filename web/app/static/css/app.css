@@ -2,3 +2,5 @@
 .navbar-brand { letter-spacing: .02em; }
 .breadcrumb { font-size: .9rem; }
 .table td, .table th { vertical-align: middle; }
+.kpi-value { font-size: 2rem; font-weight: 600; line-height: 1.2; }
+.chart-box { position: relative; height: 260px; }

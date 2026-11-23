@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Connexion{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5 col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h1 class="h4 mb-3">Connexion</h1>
+        <div id="msg" class="alert alert-danger d-none" role="alert"></div>
+        <form id="login-form" novalidate>
+          <div class="mb-3">
+            <label for="username" class="form-label">Nom d'utilisateur</label>
+            <input id="username" class="form-control" autocomplete="username" required autofocus>
+          </div>
+          <div class="mb-3">
+            <label for="password" class="form-label">Mot de passe</label>
+            <input id="password" type="password" class="form-control" autocomplete="current-password" required>
+          </div>
+          <button id="submit" class="btn btn-primary w-100" type="submit">Se connecter</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const NEXT = {{ next_url|tojson }};
+const form = document.getElementById("login-form");
+const msg = document.getElementById("msg");
+const btn = document.getElementById("submit");
+function show(text) { msg.textContent = text; msg.classList.remove("d-none"); }
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  msg.classList.add("d-none");
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value;
+  if (!username || !password) { show("Renseigne le nom d'utilisateur et le mot de passe."); return; }
+  btn.disabled = true;
+  try {
+    const r = await fetch("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok) { window.location.href = NEXT; return; }
+    if (r.status === 401) {
+      show("Identifiants invalides." + (d.attempts_left !== undefined ? " Tentatives restantes : " + d.attempts_left + "." : ""));
+    } else if (r.status === 403) {
+      show("Trop d'échecs : ton adresse IP est bloquée temporairement.");
+    } else {
+      show(d.message || "Service indisponible, réessaie plus tard.");
+    }
+  } catch (err) {
+    show("Erreur réseau.");
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+{% endblock %}
