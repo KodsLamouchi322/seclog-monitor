@@ -1,4 +1,5 @@
 // Tableau de bord : 4 indicateurs + 4 graphiques, alimentés par /api/v1/stats et /api/v1/files.
+Chart.defaults.maintainAspectRatio = false;
 const SINCE = { "24h": "now-24h", "7j": "now-7d", "30j": "now-30d" };
 const SEVERITY_COLORS = {
   critical: "#dc3545", high: "#fd7e14", medium: "#ffc107", low: "#0dcaf0", info: "#6c757d",
