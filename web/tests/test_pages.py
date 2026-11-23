@@ -43,3 +43,10 @@ def test_messages_flash_affiches(make_client):
     html = client.get("/").get_data(as_text=True)
     assert "alert-success" in html
     assert "Opération réussie" in html
+
+
+def test_page_upload_contenu(make_client):
+    html = make_client("analyste").get("/upload").get_data(as_text=True)
+    for ident in ('id="dropzone"', 'id="progress-bar"', 'id="files-table"', 'id="status-filter"',
+                  'data-max-mb="50"', "js/upload.js"):
+        assert ident in html
