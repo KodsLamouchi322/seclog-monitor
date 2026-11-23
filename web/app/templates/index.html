@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% set active_page = 'home' %}
+{% block title %}Accueil{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">SecLog Monitor</h1>
+<p class="text-muted">Collecte, recherche et analyse de logs de sécurité (ELK).</p>
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card h-100"><div class="card-body">
+      <h2 class="h5">Importer des logs</h2>
+      <p class="text-muted">Envoyer un fichier CSV, JSON ou TXT et prévisualiser les premières lignes.</p>
+      <a class="btn btn-primary" href="/upload">Aller à l'import</a>
+    </div></div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100"><div class="card-body">
+      <h2 class="h5">État des services</h2>
+      <p class="text-muted">Vérifier Elasticsearch, MongoDB, Redis et Logstash.</p>
+      <a class="btn btn-outline-secondary" href="/health">Voir /health</a>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

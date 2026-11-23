@@ -1,0 +1,4 @@
+/* SecLog Monitor - styles communs */
+.navbar-brand { letter-spacing: .02em; }
+.breadcrumb { font-size: .9rem; }
+.table td, .table th { vertical-align: middle; }

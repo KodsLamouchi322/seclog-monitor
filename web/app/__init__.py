@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask
+from flask import Flask, jsonify, render_template, request
 
 from .logging_conf import setup_logging
 
@@ -44,12 +44,21 @@ def create_app() -> Flask:
     app.register_blueprint(sessions_bp)
     init_sessions(app)
 
+    from .sessions import load_session
+
+    @app.context_processor
+    def inject_user():
+        return {"current_user": load_session()}
+
     @app.get("/")
     def index():
-        return (
-            "<h1>SecLog Monitor</h1>"
-            "<p>Squelette Flask opérationnel (Sprint 2).</p>"
-            '<p><a href="/health">État des services</a></p>'
-        )
+        return render_template("index.html")
+
+    @app.errorhandler(404)
+    def not_found(_e):
+        # L'API et l'authentification répondent en JSON, le reste en page HTML.
+        if request.path.startswith(("/api/", "/auth/")):
+            return jsonify(error="not_found", message="Ressource introuvable."), 404
+        return render_template("errors/404.html"), 404
 
     return app
