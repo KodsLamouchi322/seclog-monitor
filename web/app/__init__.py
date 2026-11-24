@@ -53,6 +53,15 @@ def create_app() -> Flask:
     def inject_user():
         return {"current_user": get_session()}
 
+    @app.after_request
+    def security_headers(resp):
+        resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+        resp.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+        resp.headers.setdefault("Referrer-Policy", "same-origin")
+        if resp.mimetype == "text/html":  # pas de page en cache après déconnexion (bouton Retour)
+            resp.headers.setdefault("Cache-Control", "no-store")
+        return resp
+
     @app.get("/")
     def index():
         return render_template("index.html")
