@@ -16,6 +16,8 @@ def create_app() -> Flask:
         MONGO_DB=os.getenv("MONGO_DB", "seclog"),
         REDIS_URL=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
         LOGSTASH_URL=os.getenv("LOGSTASH_URL", "http://localhost:9600"),
+        # Adresse de Kibana telle que le NAVIGATEUR la voit (pas celle du réseau Docker)
+        KIBANA_PUBLIC_URL=os.getenv("KIBANA_PUBLIC_URL", "http://localhost:5601").rstrip("/"),
         UPLOAD_FOLDER=os.getenv("UPLOAD_FOLDER", "/app/uploads"),
         # Module Upload (RM11)
         MAX_UPLOAD_MB=max_mb,
@@ -58,6 +60,14 @@ def create_app() -> Flask:
     @app.get("/search")
     def search_page():
         return render_template("search.html")
+
+    @app.get("/kibana")
+    def kibana_page():
+        base = app.config["KIBANA_PUBLIC_URL"]
+        dashboard = f"{base}/app/dashboards#/view/seclog-security"
+        embed = (dashboard + "?embed=true&show-time-filter=true&show-query-input=true"
+                 "&_g=(refreshInterval:(pause:!f,value:30000),time:(from:now-30d,to:now))")
+        return render_template("kibana.html", embed_url=embed, dashboard_url=dashboard)
 
     @app.errorhandler(404)
     def not_found(_e):

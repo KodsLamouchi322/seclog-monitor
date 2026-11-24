@@ -58,3 +58,11 @@ def test_page_recherche_contenu(make_client):
                   "js/search.js", "jquery"):
         assert ident in html
     assert "Recherche" in html
+
+
+def test_page_kibana_integre_le_tableau_de_bord(make_client):
+    html = make_client("lecteur").get("/kibana").get_data(as_text=True)
+    assert "<iframe" in html
+    assert "localhost:5601/app/dashboards#/view/seclog-security" in html
+    assert "embed=true" in html
+    assert "Ouvrir dans Kibana" in html

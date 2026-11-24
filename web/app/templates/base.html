@@ -26,6 +26,9 @@
         <li class="nav-item">
           <a class="nav-link{% if active_page == 'search' %} active{% endif %}" href="/search">Recherche</a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link{% if active_page == 'kibana' %} active{% endif %}" href="/kibana">Kibana</a>
+        </li>
         {% if current_user.role in ('analyste', 'admin') %}
         <li class="nav-item">
           <a class="nav-link{% if active_page == 'upload' %} active{% endif %}" href="/upload">Import de logs</a>

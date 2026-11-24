@@ -9,3 +9,4 @@
 .dropzone:hover, .dropzone:focus, .dropzone.dragover { background: #e7f1ff; border-color: #0d6efd; outline: none; }
 .msg-cell { display: inline-block; max-width: 32rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
 #logs tbody tr { cursor: pointer; }
+.kibana-frame { width: 100%; height: 78vh; border: 1px solid #dee2e6; border-radius: .5rem; background: #fff; }
