@@ -76,4 +76,4 @@ def upload():
 
 @bp.get("/upload")
 def upload_page():
-    return render_template("upload.html")
+    return render_template("upload.html", max_mb=current_app.config["MAX_UPLOAD_MB"])

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% set active_page = 'kibana' %}
+{% set crumbs = [("Kibana", None)] %}
+{% block title %}Tableaux de bord Kibana{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+  <h1 class="h3 mb-0">Tableaux de bord Kibana</h1>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ dashboard_url }}" target="_blank" rel="noopener">
+    Ouvrir dans Kibana
+  </a>
+</div>
+<p class="small text-muted mb-2">
+  Utilise le sélecteur de période en haut du tableau de bord. L'affichage se rafraîchit toutes les 30 secondes.
+  Si le cadre reste vide, ouvre Kibana avec le bouton ci-dessus.
+</p>
+<iframe class="kibana-frame" src="{{ embed_url }}" title="Tableau de bord Kibana SecLog" loading="lazy"></iframe>
+{% endblock %}

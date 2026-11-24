@@ -15,6 +15,7 @@ from pymongo.errors import PyMongoError
 from redis.exceptions import RedisError
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from .access import get_session
 from .cache import get_redis
 from .db import get_db
 from .sessions import create_session, set_session_cookie
@@ -116,7 +117,13 @@ def login():
 
 
 def _admin_check():
-    """None si autorisé, sinon une réponse d'erreur."""
+    """None si autorisé, sinon une réponse d'erreur.
+    Autorisé : un admin connecté (session) ou l'en-tête X-Admin-Token (scripts, ops)."""
+    session = get_session()
+    if session and session.get("role") == "admin":
+        return None
+    if session:  # connecté mais pas admin
+        return jsonify(error="forbidden", message="Réservé aux administrateurs."), 403
     token = current_app.config["ADMIN_TOKEN"]
     if not token:
         return jsonify(error="admin_disabled", message="ADMIN_TOKEN non configuré"), 503

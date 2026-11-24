@@ -35,6 +35,7 @@ services:
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
       - SERVER_NAME=kibana
+      - SERVER_SECURITYRESPONSEHEADERS_DISABLEEMBEDDING=false
     ports:
       - "${KIBANA_PORT:-5601}:5601"
     depends_on:
@@ -122,6 +123,7 @@ services:
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY manquant, voir .env.example}
       ES_HOST: http://elasticsearch:9200
       KIBANA_URL: http://kibana:5601
+      KIBANA_PUBLIC_URL: http://localhost:${KIBANA_PORT:-5601}
       LOGSTASH_URL: http://logstash:9600
       MONGO_URI: mongodb://${MONGO_USER:-seclog}:${MONGO_PASSWORD}@mongo:27017/${MONGO_DB:-seclog}?authSource=admin
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
