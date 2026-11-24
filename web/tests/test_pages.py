@@ -50,3 +50,11 @@ def test_page_upload_contenu(make_client):
     for ident in ('id="dropzone"', 'id="progress-bar"', 'id="files-table"', 'id="status-filter"',
                   'data-max-mb="50"', "js/upload.js"):
         assert ident in html
+
+
+def test_page_recherche_contenu(make_client):
+    html = make_client("lecteur").get("/search").get_data(as_text=True)
+    for ident in ('id="search-form"', 'id="logs"', 'id="export"', 'id="history"', 'id="log-modal"',
+                  "js/search.js", "jquery"):
+        assert ident in html
+    assert "Recherche" in html

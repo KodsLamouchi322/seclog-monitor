@@ -1,9 +1,11 @@
+import csv
+import io
 from datetime import datetime, timezone
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from elasticsearch import ApiError, TransportError
-from flask import Blueprint, jsonify, request
+from elasticsearch import ApiError, BadRequestError, TransportError
+from flask import Blueprint, Response, jsonify, request
 from pymongo.errors import PyMongoError
 
 from .cache import cached_json
@@ -29,6 +31,59 @@ def list_logs():
         return data
 
     return cached_json(compute)
+
+
+EXPORT_MAX = 10000
+EXPORT_HEADER = ["timestamp", "type", "action", "result", "severity", "ip", "port", "country", "city",
+                 "user", "role", "host", "message", "tags"]
+
+
+def _dig(src: dict, path: str):
+    for part in path.split("."):
+        if not isinstance(src, dict):
+            return ""
+        src = src.get(part, "")
+    return src
+
+
+def _csv_safe(value) -> str:
+    """Neutralise l'injection de formule (Excel) : une cellule ne doit pas commencer par = + - @."""
+    text = "" if value is None else str(value)
+    return "'" + text if text[:1] in ("=", "+", "-", "@", "\t", "\r") else text
+
+
+def _export_row(src: dict) -> list:
+    tags = src.get("tags") or []
+    values = [_dig(src, "@timestamp"), _dig(src, "event.type"), _dig(src, "event.action"), src.get("result"),
+              src.get("severity"), _dig(src, "source.ip"), _dig(src, "source.port"),
+              _dig(src, "source.geo.country_name"), _dig(src, "source.geo.city_name"),
+              _dig(src, "user.name"), _dig(src, "user.role"), _dig(src, "host.name"), src.get("message"),
+              "|".join(tags) if isinstance(tags, list) else tags]
+    return [_csv_safe(v) for v in values]
+
+
+@bp.get("/logs/export")
+def export_logs():
+    """Export CSV des résultats d'une recherche (mêmes filtres que /logs), 10 000 lignes maximum."""
+    try:
+        res = get_es().search(index=INDEX, query=build_query(request.args.to_dict()),
+                              sort=[{"@timestamp": {"order": "desc"}}], size=EXPORT_MAX,
+                              track_total_hits=True)
+    except BadRequestError:
+        return jsonify(error="Critères de recherche invalides."), 400
+    except (ApiError, TransportError):
+        return jsonify(error="Elasticsearch indisponible."), 503
+    out = io.StringIO()
+    writer = csv.writer(out)
+    writer.writerow(EXPORT_HEADER)
+    for hit in res["hits"]["hits"]:
+        writer.writerow(_export_row(hit["_source"]))
+    name = f"seclog-export-{datetime.now(timezone.utc):%Y%m%d-%H%M}.csv"
+    headers = {"Content-Disposition": f'attachment; filename="{name}"'}
+    if res["hits"]["total"]["value"] > EXPORT_MAX:
+        headers["X-Export-Truncated"] = "true"
+    # BOM UTF-8 : Excel affiche correctement les accents
+    return Response("\ufeff" + out.getvalue(), mimetype="text/csv", headers=headers)
 
 
 @bp.get("/logs/<doc_id>")

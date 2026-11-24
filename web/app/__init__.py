@@ -55,6 +55,10 @@ def create_app() -> Flask:
     def index():
         return render_template("index.html")
 
+    @app.get("/search")
+    def search_page():
+        return render_template("search.html")
+
     @app.errorhandler(404)
     def not_found(_e):
         # L'API et l'authentification répondent en JSON, le reste en page HTML.

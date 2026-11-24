@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% set active_page = 'search' %}
+{% set crumbs = [("Recherche", None)] %}
+{% block title %}Recherche{% endblock %}
+{% block head %}
+<link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Recherche de logs</h1>
+
+<form id="search-form" class="card card-body mb-3" novalidate>
+  <div class="row g-2">
+    <div class="col-md-6 col-lg-4">
+      <label for="f-q" class="form-label small mb-1">Texte libre</label>
+      <input id="f-q" class="form-control form-control-sm" placeholder="ex. failed login admin">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <label for="f-event_type" class="form-label small mb-1">Type d'événement</label>
+      <select id="f-event_type" class="form-select form-select-sm">
+        <option value="">Tous</option>
+        <option value="authentication">Authentification</option>
+        <option value="intrusion">Intrusion</option>
+        <option value="firewall">Pare-feu / IDS</option>
+        <option value="sensitive_access">Accès sensible</option>
+        <option value="audit">Audit</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <label for="f-result" class="form-label small mb-1">Résultat</label>
+      <select id="f-result" class="form-select form-select-sm">
+        <option value="">Tous</option>
+        <option value="success">Succès</option>
+        <option value="failure">Échec</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <label for="f-severity" class="form-label small mb-1">Gravité</label>
+      <select id="f-severity" class="form-select form-select-sm">
+        <option value="">Toutes</option>
+        <option value="critical">critical</option>
+        <option value="high">high</option>
+        <option value="medium">medium</option>
+        <option value="low">low</option>
+        <option value="info">info</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <label for="f-country" class="form-label small mb-1">Pays (code)</label>
+      <input id="f-country" class="form-control form-control-sm" maxlength="2" placeholder="ex. FR">
+    </div>
+    <div class="col-md-4 col-lg-3">
+      <label for="f-ip" class="form-label small mb-1">Adresse IP source</label>
+      <input id="f-ip" class="form-control form-control-sm" placeholder="ex. 185.220.101.45">
+    </div>
+    <div class="col-md-4 col-lg-3">
+      <label for="f-date_from" class="form-label small mb-1">Du</label>
+      <input id="f-date_from" type="datetime-local" class="form-control form-control-sm">
+    </div>
+    <div class="col-md-4 col-lg-3">
+      <label for="f-date_to" class="form-label small mb-1">Au</label>
+      <input id="f-date_to" type="datetime-local" class="form-control form-control-sm">
+    </div>
+    <div class="col-lg-3 d-flex align-items-end gap-2">
+      <button class="btn btn-primary btn-sm" type="submit">Rechercher</button>
+      <button id="reset" class="btn btn-outline-secondary btn-sm" type="button">Réinitialiser</button>
+      <button id="export" class="btn btn-outline-success btn-sm" type="button"
+              title="Exporte les résultats avec les filtres actifs (10 000 lignes maximum)">Exporter CSV</button>
+    </div>
+  </div>
+</form>
+
+<div id="search-error" class="alert alert-danger d-none"></div>
+<div class="table-responsive">
+  <table id="logs" class="table table-sm table-striped table-hover bg-white w-100">
+    <thead>
+      <tr><th>Date</th><th>Type</th><th>Action</th><th>Résultat</th><th>Gravité</th>
+          <th>IP source</th><th>Pays</th><th>Utilisateur</th><th>Message</th></tr>
+    </thead>
+  </table>
+</div>
+<div class="small text-muted mb-4">Clique sur une ligne pour voir tous les champs. Pagination limitée à 10 000 résultats : affine tes filtres au-delà.</div>
+
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span class="fw-semibold">Historique des recherches</span>
+    <button id="history-refresh" class="btn btn-outline-secondary btn-sm">Actualiser</button>
+  </div>
+  <ul id="history" class="list-group list-group-flush"></ul>
+</div>
+
+<div class="modal fade" id="log-modal" tabindex="-1" aria-labelledby="log-modal-title" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title h5" id="log-modal-title">Détail de l'événement</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body"><table class="table table-sm mb-0"><tbody id="log-detail"></tbody></table></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+<script src="{{ url_for('static', filename='js/search.js') }}"></script>
+{% endblock %}
