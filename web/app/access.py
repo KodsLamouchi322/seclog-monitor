@@ -6,7 +6,7 @@ Une seule règle globale (before_request) protège toute l'application :
 - selon le rôle : lecteur < analyste < admin.
   - lecteur : consulter (recherche, statistiques, fichiers) ;
   - analyste : lecteur + importer des fichiers (/upload) ;
-  - admin : tout, y compris la liste noire d'IP.
+  - admin : tout, y compris la liste noire d'IP et la gestion des règles d'alerte.
 Un rôle inconnu n'a aucun droit.
 """
 from urllib.parse import quote
@@ -37,6 +37,8 @@ def role_level(session) -> int:
 
 
 def required_level(path: str, method: str) -> int:
+    if method not in SAFE_METHODS and path.startswith("/api/v1/rules"):
+        return ROLE_LEVEL["admin"]  # créer, modifier, supprimer ou tester une règle d'alerte
     if path.startswith("/upload") or method not in SAFE_METHODS:
         return ROLE_LEVEL["analyste"]
     return ROLE_LEVEL["lecteur"]

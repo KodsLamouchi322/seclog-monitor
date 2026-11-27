@@ -154,6 +154,40 @@ services:
       start_period: 20s
     restart: unless-stopped
 
+
+  # Worker d'alerting (module G) : même image que « web », commande différente.
+  alert-worker:
+    build:
+      context: ./web
+      args:
+        INSTALL_DEV: "1"
+    container_name: seclog-alert-worker
+    command: ["python", "-m", "app.worker"]
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY manquant, voir .env.example}
+      ES_HOST: http://elasticsearch:9200
+      MONGO_URI: mongodb://${MONGO_USER:-seclog}:${MONGO_PASSWORD}@mongo:27017/${MONGO_DB:-seclog}?authSource=admin
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ALERT_INTERVAL_SECONDS: ${ALERT_INTERVAL_SECONDS:-60}
+      ALERT_NEVER_BLOCK: ${ALERT_NEVER_BLOCK:-}
+    volumes:
+      - ./web/app:/app/app:ro
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [seclog-net]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os,sys,time; sys.exit(0 if time.time()-os.path.getmtime('/tmp/worker_heartbeat') < 180 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
 networks:
   seclog-net:
     name: seclog-net

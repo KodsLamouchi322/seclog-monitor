@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% set active_page = 'rules' %}
+{% set crumbs = [("Règles d'alerte", None)] %}
+{% block title %}Règles d'alerte{% endblock %}
+{% block content %}
+<div id="rules-app" data-admin="{{ 'true' if current_user and current_user.role == 'admin' else 'false' }}">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+    <h1 class="h3 mb-0">Règles d'alerte</h1>
+    {% if current_user and current_user.role == 'admin' %}
+    <button id="new-rule" class="btn btn-primary btn-sm">Nouvelle règle</button>
+    {% endif %}
+  </div>
+  <p class="small text-muted">
+    Une règle surveille les logs sur une fenêtre de temps. « Tester » l'évalue tout de suite, sans créer d'alerte ni bloquer d'IP.
+    {% if not (current_user and current_user.role == 'admin') %}La gestion des règles est réservée aux administrateurs.{% endif %}
+  </p>
+  <div id="rules-error" class="alert alert-danger d-none"></div>
+  <div id="test-result" class="mb-3"></div>
+  <div class="table-responsive">
+    <table class="table table-sm table-striped bg-white align-middle">
+      <thead><tr><th>Nom</th><th>Type</th><th>Gravité</th><th>Fenêtre</th><th>Paramètres</th><th>Active</th><th></th></tr></thead>
+      <tbody id="rules-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="rule-modal" tabindex="-1" aria-labelledby="rule-modal-title" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <form class="modal-content" id="rule-form" novalidate>
+      <div class="modal-header">
+        <h2 class="modal-title h5" id="rule-modal-title">Règle d'alerte</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+        <div id="form-error" class="alert alert-danger d-none"></div>
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label for="r-name" class="form-label">Nom</label>
+            <input id="r-name" class="form-control" maxlength="100" required>
+          </div>
+          <div class="col-md-4">
+            <label for="r-severity" class="form-label">Gravité</label>
+            <select id="r-severity" class="form-select"></select>
+          </div>
+          <div class="col-12">
+            <label for="r-type" class="form-label">Type de règle</label>
+            <select id="r-type" class="form-select"></select>
+          </div>
+          <div class="col-md-6">
+            <label for="r-window" class="form-label">Fenêtre d'analyse (minutes)</label>
+            <input id="r-window" type="number" min="1" max="43200" class="form-control" value="15">
+          </div>
+          <div class="col-md-6">
+            <label for="r-cooldown" class="form-label">Délai entre deux alertes (minutes)</label>
+            <input id="r-cooldown" type="number" min="0" max="1440" class="form-control" value="15">
+          </div>
+          <div class="col-md-6 param param-threshold">
+            <label for="r-threshold" class="form-label">Seuil (événements par adresse IP)</label>
+            <input id="r-threshold" type="number" min="1" class="form-control" value="5">
+          </div>
+          <div class="col-md-6 param param-host d-none">
+            <label for="r-host" class="form-label">Équipement surveillé</label>
+            <input id="r-host" class="form-control" placeholder="ex. fw-edge-01">
+          </div>
+          <div class="col-md-6 param param-countries d-none">
+            <label for="r-countries" class="form-label">Pays autorisés (codes séparés par des virgules)</label>
+            <input id="r-countries" class="form-control" placeholder="ex. TN, FR">
+          </div>
+          <div class="col-12 d-flex gap-4 flex-wrap">
+            <div class="form-check form-switch">
+              <input id="r-enabled" class="form-check-input" type="checkbox" checked>
+              <label for="r-enabled" class="form-check-label">Règle active</label>
+            </div>
+            <div class="form-check form-switch" id="block-wrap">
+              <input id="r-block" class="form-check-input" type="checkbox">
+              <label for="r-block" class="form-check-label">Bloquer automatiquement l'IP</label>
+            </div>
+          </div>
+        </div>
+        <div id="modal-test" class="mt-3"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="modal-test-btn" class="btn btn-outline-secondary">Tester</button>
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/rules.js') }}"></script>
+{% endblock %}

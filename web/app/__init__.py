@@ -37,6 +37,9 @@ def create_app() -> Flask:
     from .api import bp as api_bp
 
     app.register_blueprint(api_bp)
+    from .rules import bp as rules_bp
+
+    app.register_blueprint(rules_bp)
     from .ratelimit import init_rate_limit
     init_rate_limit(app)
     from .auth import bp as auth_bp, init_blacklist
@@ -69,6 +72,10 @@ def create_app() -> Flask:
     @app.get("/search")
     def search_page():
         return render_template("search.html")
+
+    @app.get("/rules")
+    def rules_page():
+        return render_template("rules.html")
 
     @app.get("/kibana")
     def kibana_page():
